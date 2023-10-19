@@ -5,9 +5,6 @@ from rich.console import Console
 
 class pl0Lexer(Lexer):
     tokens = {
-        # Comentarios
-        COMMENT,
-
         # Palabras reservadas
         BEGIN, END, IF, THEN, ELSE, WHILE, DO,
         PRINT, WRITE, READ, RETURN, SKIP, BREAK,
@@ -15,19 +12,19 @@ class pl0Lexer(Lexer):
 
         # Operador de asignación
         ASIGN,
-
+        '''
         # Operadores aritméticos
         PLUS, MINUS, TIMES, DIVIDE, 
         LPAREN, RPAREN, LBRACKET, RBRACKET,
 
         # Signos de puntuación
         COLON, COMMA, SEMICOLON,
-
+        '''
         # Operadores lógicos
-        NOT, AND, OR, 
+        ,NOT, AND, OR, 
 
         # Operadores de relación
-        LESS, LESS_EQUAL, GREATER, GREATER_EQUAL, EQUAL, NOT_EQUAL,
+        LESS_EQUAL, GREATER_EQUAL, EQUAL, NOT_EQUAL,
 
         # Literales
         NAME, INTEGER, FLOAT, STRING, 
@@ -36,16 +33,15 @@ class pl0Lexer(Lexer):
     
     # Ignorar espacios en blanco y tabulaciones
     ignore = ' \t'
-    COMMENT = r'/\*(.|\n)*?\*/'
 
     # Palabras clave y palabras reservadas
-    BEGIN = r'begin\b'
+    BEGIN = r'begin( |\t|\n)'
     END = r'end\b'
     IF = r'if\b'
     THEN = r'then\b'
     ELSE = r'else\b'
     WHILE = r'while\b'
-    DO = r'do\b'
+    DO = r'do( |\t|\n)'
     PRINT = r'print\b'
     WRITE = r'write\b'
     READ = r'read\b'
@@ -61,12 +57,12 @@ class pl0Lexer(Lexer):
     ASIGN = r':='
 
     # Operadores
+    literals = '+-*/,:;()[]><'
+    '''
     PLUS = r'\+'
     MINUS = r'-'
     TIMES = r'\*'
     DIVIDE = r'/'
-    LPAREN = r'\('
-    RPAREN = r'\)'
     LBRACKET = r'\['
     RBRACKET = r'\]'
 
@@ -74,14 +70,12 @@ class pl0Lexer(Lexer):
     COLON = r':'
     COMMA = r','
     SEMICOLON = r';'
-
+    '''
     # Operadores relacionales
     NOT_EQUAL = r'!='
     LESS_EQUAL = r'<='
     GREATER_EQUAL = r'>='
     EQUAL = r'=='
-    LESS = r'<'
-    GREATER = r'>'
 
     # Operadores lógicos
     AND = r'and\b'
@@ -97,6 +91,24 @@ class pl0Lexer(Lexer):
     # funcion para llevar los saltos de linea
     @_(r'\n+')
     def ignore_newline(self, t):
+        self.lineno += t.value.count('\n')
+
+    # funcion para ignorar comentarios
+    @_(r'/\*(.|\n)*?\*/')
+    def ignore_comment(self, t):
+        self.lineno += t.value.count('\n')
+
+    # funcion para ignorar e identificar malos comentarios
+    @_(r'/\*(.|\n)+')
+    def ignore_badcomment(self, t):
+        print(f"Comentario imcompleto en la linea: {self.lineno}")
+        print(f"Comentario : {t.value}")
+        self.lineno += t.value.count('\n')
+
+    # funcion para ignorar e identificar enteros mal escritos
+    @_(r'[0]\d+.*')
+    def ignore_badnumberint(self, t):
+        print(f"Numero mal escrito {t.value}, en la linea: {self.lineno}")
         self.lineno += t.value.count('\n')
 
     @_(r'(\/\*)\.*(\*\/)')
