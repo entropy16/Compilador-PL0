@@ -49,7 +49,7 @@ class pl0Lexer(Lexer):
     STRING_TYPE = r'string\b'
 
     # Operador de asignación
-    ASIGN = r':='
+    ASSIGN = r':='
 
     # Operadores relacionales
     NOT_EQUAL = r'!='
