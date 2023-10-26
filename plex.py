@@ -5,9 +5,6 @@ from rich.console import Console
 
 class pl0Lexer(Lexer):
     tokens = {
-        # Comentarios
-        COMMENT,
-
         # Palabras reservadas
         BEGIN, END, IF, THEN, ELSE, WHILE, DO,
         PRINT, WRITE, READ, RETURN, SKIP, BREAK,
@@ -15,19 +12,11 @@ class pl0Lexer(Lexer):
 
         # Operador de asignación
         ASIGN,
-
-        # Operadores aritméticos
-        PLUS, MINUS, TIMES, DIVIDE, 
-        LPAREN, RPAREN, LBRACKET, RBRACKET,
-
-        # Signos de puntuación
-        COLON, COMMA, SEMICOLON,
-
         # Operadores lógicos
         NOT, AND, OR, 
 
         # Operadores de relación
-        LESS, LESS_EQUAL, GREATER, GREATER_EQUAL, EQUAL, NOT_EQUAL,
+        LESS_EQUAL, GREATER_EQUAL, EQUAL, NOT_EQUAL,
 
         # Literales
         NAME, INTEGER, FLOAT, STRING, 
@@ -36,16 +25,18 @@ class pl0Lexer(Lexer):
     
     # Ignorar espacios en blanco y tabulaciones
     ignore = ' \t'
-    COMMENT = r'/\*(.|\n)*?\*/'
+
+    # Operadores
+    literals = '+-*/,:;()[]><'
 
     # Palabras clave y palabras reservadas
-    BEGIN = r'begin\b'
+    BEGIN = r'begin( |\t|\n)\b'
     END = r'end\b'
     IF = r'if\b'
     THEN = r'then\b'
     ELSE = r'else\b'
     WHILE = r'while\b'
-    DO = r'do\b'
+    DO = r'do( |\t|\n)\b'
     PRINT = r'print\b'
     WRITE = r'write\b'
     READ = r'read\b'
@@ -60,28 +51,11 @@ class pl0Lexer(Lexer):
     # Operador de asignación
     ASIGN = r':='
 
-    # Operadores
-    PLUS = r'\+'
-    MINUS = r'-'
-    TIMES = r'\*'
-    DIVIDE = r'/'
-    LPAREN = r'\('
-    RPAREN = r'\)'
-    LBRACKET = r'\['
-    RBRACKET = r'\]'
-
-    # Signos de puntuación
-    COLON = r':'
-    COMMA = r','
-    SEMICOLON = r';'
-
     # Operadores relacionales
     NOT_EQUAL = r'!='
     LESS_EQUAL = r'<='
     GREATER_EQUAL = r'>='
     EQUAL = r'=='
-    LESS = r'<'
-    GREATER = r'>'
 
     # Operadores lógicos
     AND = r'and\b'
@@ -90,13 +64,45 @@ class pl0Lexer(Lexer):
 
     # Definir patrones para tokens
     NAME = r'[a-zA-Z_][a-zA-Z_0-9]*'
-    FLOAT = r'0\.[0-9]+([eE][+\-]?[0-9]+)?|[1-9][0-9]*\.[0-9]+([eE][+\-]?[0-9]+)?|[1-9][0-9]*[eE][+\-]?[0-9]+'
-    INTEGER = r'[1-9][0-9]*|0\b'
-    STRING = r'"(\\.|[^"\\])*"'
+    FLOAT = r'(0\.[0-9]+([eE][+\-]?[0-9]+)?|[1-9][0-9]*\.[0-9]+([eE][+\-]?[0-9]+)?|[1-9][0-9]*[eE][+\-]?[0-9]+)\b'
+    INTEGER = r'([1-9][0-9]*|0)\b'
+    STRING = r'"(.+[^\\e])"'
 
     # funcion para llevar los saltos de linea
     @_(r'\n+')
     def ignore_newline(self, t):
+        self.lineno += t.value.count('\n')
+
+    # funcion para ignorar comentarios
+    @_(r'/\*(.|\n)*?\*/')
+    def ignore_comment(self, t):
+        self.lineno += t.value.count('\n')
+
+    # funcion para ignorar e identificar malos comentarios
+    @_(r'/\*(.|\n)+')
+    def ignore_badcomment(self, t):
+        print(f"Comentario imcompleto en la linea: {self.lineno}")
+        print(f"Comentario : {t.value}")
+        self.lineno += t.value.count('\n')
+
+    # funcion para ignorar e identificar enteros mal escritos
+    @_(r'[0]\d+.*')
+    def ignore_badnumberint(self, t):
+        print(f"Numero mal escrito {t.value}, en la linea: {self.lineno}")
+        self.lineno += t.value.count('\n')
+
+    # funcion para ignorar e identificar flotantes mal escritos
+    @_(r'0+\.[\.]*[0-9]+([eE][\.]*[+\-]*[+\-]?[0-9]+)?|[0-9]+\.[\.]*[0-9]+([eE][\.]*[+\-]*[+\-]?[0-9]+)?|[0-9][0-9]*[eE][\.]*[+\-]*[+\-]?[0-9]+|[\.]+[0-9]+([eE][\.]*[+\-]*[+\-]?[0-9]+)?')
+    def ignore_badnumberfloat(self, t):
+        print(f"Numero mal escrito {t.value}, en la linea: {self.lineno}")
+        self.lineno += t.value.count('\n')
+
+    #funcion para ignorar malos strings
+    
+    @_(r'".+')
+    def ignore_badstring(self,t):
+        print(f"String mal escrito en la linea: {self.lineno}")
+        print(f"String: {t.value}")
         self.lineno += t.value.count('\n')
 
     @_(r'(\/\*)\.*(\*\/)')
@@ -122,11 +128,6 @@ if __name__ == '__main__':
             print(f"Ocurrió un error al leer el archivo: {str(e)}")
             
     lexer = pl0Lexer()
-"""     if text:
-        for token in lexer.tokenize(text):
-            line = (token.type, token.value, token.lineno)
-            print(line)
-"""
 
 table = Table(title='Análisis Léxico')
 table.add_column('type',style='cyan')
