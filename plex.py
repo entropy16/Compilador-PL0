@@ -11,7 +11,7 @@ class pl0Lexer(Lexer):
         FUN, INT_TYPE, FLOAT_TYPE, STRING_TYPE,
 
         # Operador de asignación
-        ASIGN,
+        ASSIGN,
         # Operadores lógicos
         NOT, AND, OR, 
 
